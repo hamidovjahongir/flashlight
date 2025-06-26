@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:torch_light/torch_light.dart';
+import 'package:flutter/services.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Flashlight Toggle',
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: FlashlightPage(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -23,36 +22,63 @@ class FlashlightPage extends StatefulWidget {
 }
 
 class _FlashlightPageState extends State<FlashlightPage> {
-  bool _isOn = false;
+  static const platform = MethodChannel('samples.flutter.dev/flashlight');
+  bool _isFlashlightOn = false;
 
   Future<void> _toggleFlashlight() async {
     try {
-      if (_isOn) {
-        await TorchLight.disableTorch();
+      if (_isFlashlightOn) {
+        await platform.invokeMethod('turnOff');
+        setState(() {
+          _isFlashlightOn = false;
+        });
       } else {
-        await TorchLight.enableTorch();
+        await platform.invokeMethod('turnOn');
+        setState(() {
+          _isFlashlightOn = true;
+        });
       }
-      setState(() {
-        _isOn = !_isOn;
-      });
-    } catch (e) {
-      print("Xatolik: $e");
+    } on PlatformException catch (e) {
+      print("Xatolik: '${e.message}'");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _isOn ? Colors.yellow[100] : Colors.grey[300],
-      appBar: AppBar(title: const Text("Fonarni boshqarish")),
+      appBar: AppBar(title: Text('Flashlight Toggle')),
       body: Center(
-        child: IconButton(
-          iconSize: 100,
-          icon: Icon(
-            _isOn ? Icons.flashlight_on : Icons.flashlight_off,
-            color: _isOn ? Colors.amber : Colors.black,
-          ),
-          onPressed: _toggleFlashlight,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              _isFlashlightOn ? Icons.flashlight_on : Icons.flashlight_off,
+              size: 100,
+              color: _isFlashlightOn ? Colors.yellow : Colors.grey,
+            ),
+            SizedBox(height: 20),
+            Text(
+              _isFlashlightOn ? 'Flashlight ON' : 'Flashlight OFF',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: _isFlashlightOn ? Colors.yellow : Colors.grey,
+              ),
+            ),
+            SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: _toggleFlashlight,
+              child: Text(
+                _isFlashlightOn ? 'Ochirish' : 'Yoqish',
+                style: TextStyle(fontSize: 18),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isFlashlightOn ? Colors.red : Colors.green,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+              ),
+            ),
+          ],
         ),
       ),
     );
